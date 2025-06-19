@@ -30,8 +30,17 @@ class SneakersApp {
             return 'http://localhost:5000';
         }
         
+        // For GitHub Pages, use mock data
+        if (window.location.hostname.includes('github.io')) {
+            return null; // Will trigger mock data usage
+        }
+        
         // For production, use relative URLs or configure your backend URL
         return '/api';
+    }
+
+    isUsingMockData() {
+        return this.apiBaseUrl === null || window.mockApiData;
     }
     
     initializeElements() {
@@ -59,6 +68,13 @@ class SneakersApp {
         this.showLoading();
         
         try {
+            // If using mock data, just simulate a refresh
+            if (this.isUsingMockData()) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading
+                await this.fetchSneakers();
+                return;
+            }
+            
             // Trigger backend refresh
             await this.triggerBackendRefresh();
             
@@ -88,6 +104,13 @@ class SneakersApp {
     
     async fetchSneakers() {
         this.showLoading();
+        
+        // Use mock data if on GitHub Pages or API is not available
+        if (this.isUsingMockData()) {
+            this.loadMockData();
+            this.hideLoading();
+            return;
+        }
         
         try {
             const response = await fetch(`${this.apiBaseUrl}/api/sneakers`);
@@ -119,7 +142,12 @@ class SneakersApp {
     loadMockData() {
         console.log('Loading mock data as fallback');
         
-        this.sneakersData = [
+        // Use window.mockApiData if available (from GitHub Pages), otherwise use default mock data
+        if (window.mockApiData && window.mockApiData.sneakers) {
+            this.sneakersData = window.mockApiData.sneakers;
+            this.updateStats(window.mockApiData.sneakers.length, window.mockApiData.last_updated);
+        } else {
+            this.sneakersData = [
             {
                 brand: 'Nike',
                 model: 'Air Max 90',
@@ -168,9 +196,11 @@ class SneakersApp {
                 url: 'https://example.com/used-yeezy-350',
                 source: 'Demo Marketplace'
             }
-        ];
+            ];
+            
+            this.updateStats(this.sneakersData.length, new Date().toISOString());
+        }
         
-        this.updateStats(this.sneakersData.length, new Date().toISOString());
         this.filterData();
     }
     

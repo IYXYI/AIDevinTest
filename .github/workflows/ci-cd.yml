@@ -94,14 +94,13 @@ jobs:
     
     - name: Prepare deployment files
       run: |
-        # Create a deployment directory
-        mkdir -p deploy
-        
-        # Copy frontend files
-        cp -r frontend/* deploy/
+        # Copy frontend files to root for GitHub Pages
+        cp frontend/index.html ./
+        cp frontend/style.css ./
+        cp frontend/script.js ./
         
         # Create a simple API mock for GitHub Pages
-        cat > deploy/api-mock.js << 'EOF'
+        cat > api-mock.js << 'EOF'
         // Mock API data for GitHub Pages deployment
         window.mockApiData = {
           sneakers: [
@@ -159,12 +158,12 @@ jobs:
         EOF
         
         # Update the HTML to include the mock API
-        sed -i 's|</head>|<script src="api-mock.js"></script></head>|' deploy/index.html
+        sed -i 's|</head>|<script src="api-mock.js"></script></head>|' index.html
     
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v2
       with:
-        path: ./deploy
+        path: ./
     
     - name: Deploy to GitHub Pages
       id: deployment
