@@ -99,7 +99,7 @@ jobs:
         cp frontend/style.css ./
         cp frontend/script.js ./
         
-        # Create a simple API mock for GitHub Pages
+        # Create a simple API mock for GitHub Pages (updated)
         cat > api-mock.js << 'EOF'
         // Mock API data for GitHub Pages deployment
         window.mockApiData = {
