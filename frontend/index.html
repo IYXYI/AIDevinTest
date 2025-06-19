@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sneakers Market Scraper</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔍 Sneakers Market Scraper</h1>
+            <p>Discover the best sneaker deals from French marketplaces</p>
+        </header>
+
+        <div class="controls">
+            <button id="refreshBtn" class="btn btn-primary">
+                <span class="btn-icon">🔄</span>
+                Refresh Data
+            </button>
+            
+            <div class="filter-controls">
+                <label for="conditionFilter">Filter by condition:</label>
+                <select id="conditionFilter" class="filter-select">
+                    <option value="all">All Conditions</option>
+                    <option value="new">New Only</option>
+                    <option value="used">Used Only</option>
+                </select>
+            </div>
+            
+            <div class="stats">
+                <span id="totalCount" class="stat">Total: 0</span>
+                <span id="lastUpdated" class="stat">Last updated: Never</span>
+            </div>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading sneaker data...</p>
+        </div>
+
+        <div id="error" class="error hidden">
+            <p>❌ Failed to load data. Please try again.</p>
+        </div>
+
+        <div class="table-container">
+            <table id="sneakersTable" class="sneakers-table">
+                <thead>
+                    <tr>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>Price</th>
+                        <th>Condition</th>
+                        <th>Source</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody id="sneakersTableBody">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="noData" class="no-data hidden">
+            <div class="no-data-icon">👟</div>
+            <h3>No sneakers found</h3>
+            <p>Click "Refresh Data" to load the latest sneaker listings</p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 Sneakers Market Scraper | Built with ❤️ for sneaker enthusiasts</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run backend tests
+      run: |
+        cd backend
+        python -m pytest tests/ -v --tb=short
+    
+    - name: Test API endpoints
+      run: |
+        cd backend
+        # Start the Flask app in background
+        python app.py &
+        APP_PID=$!
+        
+        # Wait for the app to start
+        sleep 10
+        
+        # Test the endpoints
+        curl -f http://localhost:5000/ || exit 1
+        curl -f http://localhost:5000/api/sneakers || exit 1
+        curl -f http://localhost:5000/api/sneakers/new || exit 1
+        curl -f http://localhost:5000/api/sneakers/used || exit 1
+        
+        # Kill the app
+        kill $APP_PID
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm init -y
+        npm install --save-dev http-server
+    
+    - name: Test frontend build
+      run: |
+        cd frontend
+        # Start a simple HTTP server to test the frontend
+        npx http-server . -p 8080 &
+        SERVER_PID=$!
+        
+        # Wait for server to start
+        sleep 5
+        
+        # Test that the HTML loads
+        curl -f http://localhost:8080/ || exit 1
+        
+        # Kill the server
+        kill $SERVER_PID
+
+  deploy:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+    
+    - name: Prepare deployment files
+      run: |
+        # Create a deployment directory
+        mkdir -p deploy
+        
+        # Copy frontend files
+        cp -r frontend/* deploy/
+        
+        # Create a simple API mock for GitHub Pages
+        cat > deploy/api-mock.js << 'EOF'
+        // Mock API data for GitHub Pages deployment
+        window.mockApiData = {
+          sneakers: [
+            {
+              brand: 'Nike',
+              model: 'Air Max 90',
+              price: '€129.99',
+              condition: 'New',
+              url: 'https://example.com/nike-air-max-90',
+              source: 'Demo Store'
+            },
+            {
+              brand: 'Adidas',
+              model: 'Stan Smith',
+              price: '€89.99',
+              condition: 'New',
+              url: 'https://example.com/adidas-stan-smith',
+              source: 'Demo Store'
+            },
+            {
+              brand: 'Nike',
+              model: 'Air Jordan 1',
+              price: '€85.00',
+              condition: 'Used - Good',
+              url: 'https://example.com/used-air-jordan-1',
+              source: 'Demo Marketplace'
+            },
+            {
+              brand: 'Converse',
+              model: 'Chuck Taylor All Star',
+              price: '€65.00',
+              condition: 'New',
+              url: 'https://example.com/converse-chuck-taylor',
+              source: 'Demo Store'
+            },
+            {
+              brand: 'Vans',
+              model: 'Old Skool',
+              price: '€75.00',
+              condition: 'New',
+              url: 'https://example.com/vans-old-skool',
+              source: 'Demo Store'
+            },
+            {
+              brand: 'Adidas',
+              model: 'Yeezy Boost 350',
+              price: '€180.00',
+              condition: 'Used - Very Good',
+              url: 'https://example.com/used-yeezy-350',
+              source: 'Demo Marketplace'
+            }
+          ],
+          last_updated: new Date().toISOString()
+        };
+        EOF
+        
+        # Update the HTML to include the mock API
+        sed -i 's|</head>|<script src="api-mock.js"></script></head>|' deploy/index.html
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: ./deploy
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
