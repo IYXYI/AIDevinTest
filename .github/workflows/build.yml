@@ -192,22 +192,50 @@ jobs:
       pages: write
       id-token: write
       
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Check if Pages is enabled
+      id: check-pages
+      run: |
+        # Try to check if Pages is enabled
+        if curl -s -f -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+           -H "Accept: application/vnd.github.v3+json" \
+           "https://api.github.com/repos/${{ github.repository }}/pages" > /dev/null 2>&1; then
+          echo "pages_enabled=true" >> $GITHUB_OUTPUT
+          echo "✅ GitHub Pages is enabled"
+        else
+          echo "pages_enabled=false" >> $GITHUB_OUTPUT
+          echo "⚠️ GitHub Pages is not enabled. Please enable it in repository settings."
+          echo "📝 Instructions:"
+          echo "1. Go to repository Settings"
+          echo "2. Navigate to Pages section"
+          echo "3. Under Source, select 'GitHub Actions'"
+          echo "4. Re-run this workflow after enabling Pages"
+        fi
+      
     - name: Setup Pages
+      if: steps.check-pages.outputs.pages_enabled == 'true'
       uses: actions/configure-pages@v4
       
     - name: Upload artifact
+      if: steps.check-pages.outputs.pages_enabled == 'true'
       uses: actions/upload-pages-artifact@v3
       with:
         path: '.'
         
     - name: Deploy to GitHub Pages
+      if: steps.check-pages.outputs.pages_enabled == 'true'
       id: deployment
       uses: actions/deploy-pages@v4
+      
+    - name: Pages deployment summary
+      run: |
+        if [ "${{ steps.check-pages.outputs.pages_enabled }}" == "true" ]; then
+          echo "🚀 Successfully deployed to GitHub Pages!"
+          echo "📱 Your app will be available at: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+        else
+          echo "⏭️ Skipped Pages deployment - Pages not enabled"
+          echo "💡 Enable GitHub Pages in repository settings to deploy automatically"
+        fi
